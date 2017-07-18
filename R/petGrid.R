@@ -92,7 +92,7 @@ petGrid <- function(tasmin = NULL,
     attr(pet.grid$Variable, "units") <- "mm.month-1"
     attr(pet.grid$Variable, "daily_agg_cellfun") <- "sum"
     attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
-    attr(pet.grid$Variable, "verification_time") <- "MM"
+    attr(pet.grid$Variable, "time_resolution") <- "MM"
     attr(pet.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
                                        packageVersion("SPEI"), "using R package 'drought4R' v",
                                        packageVersion("drought4R"))
