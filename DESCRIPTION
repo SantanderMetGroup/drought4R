@@ -1,0 +1,25 @@
+Package: drought4R
+Depends:
+    R(>= 3.1.0)
+Imports:
+    SPEI,
+    transformeR,
+    utils,
+    abind,
+    magrittr
+Suggests:
+    loadeR,
+Type: Package
+Title: An R package for drought assessment fully integrated in the climate4R bundle
+Version: 0.0.0
+Date: 2017-07-18
+Authors@R: as.person(c(
+    "Santander Meteorology Group <http://meteo.unican.es> [ctb]",
+    "Joaquin Bedia <bediaj@unican.es> [aut, cre]",
+    "Maialen Iturbide <miturbide@ifca.unican.es> [aut]"))
+BugReports: https://github.com/SantanderMetGroup/drought4R/issues
+URL: https://github.com/SantanderMetGroup/transformeR/wiki
+Description: The package implements or imports routines for drought index calculation, using as inputs the standard climate grid structures of the climate4R bundle.
+License: file LICENSE
+LazyData: true
+RoxygenNote: 6.0.1
