@@ -33,11 +33,11 @@
 #' @examples 
 #' # By default, et0.grid is null, and SPI is computed from precipitation: 
 #' data("pr.cru.iberia")
-#' spi3 <- speiGrid(pr.grid = pr.cru.iberia, scale = 3)
+#' spi3 <- speiGrid(pr.grid = pr.cru.iberia, scale = 3, na.rm = TRUE)
 #' ## If PET is used, then SPEI is calculated
 #' data("tas.cru.iberia")
 #' et0.grid <- petGrid(tas = tas.cru.iberia, method = "thornthwaite")
-#' spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3)
+#' spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, na.rm = TRUE)
 
 speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
     pr.grid <- redim(pr.grid, member = TRUE)
@@ -61,7 +61,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
         }
         wbalance <- pr - pet
         pt <- pet <- NULL
-        index <- spei(wbalance, scale, na.rm = TRUE) %>% extract2("fitted") %>%  mat2Dto3Darray(x = coords$x, y = coords$y)
+        index <- spei(wbalance, scale, ...) %>% extract2("fitted") %>%  mat2Dto3Darray(x = coords$x, y = coords$y)
     })
     message("[", Sys.time(), "] Done")
     ## Recover the grid structure -----------------------

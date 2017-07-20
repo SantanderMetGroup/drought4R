@@ -80,8 +80,8 @@ petGrid <- function(tasmin = NULL,
                     ...) {
     method <- match.arg(method, choices = c("thornthwaite", "hargreaves"))
     out <- switch(method,
-           "thornthwaite" = petGrid.th(tas),
-           "hargreaves" = petGrid.har(tasmin, tasmax, pr))
+           "thornthwaite" = petGrid.th(tas, ...),
+           "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...))
     ## Recover the grid structure -----------------------
     coords <- getCoordinates(out$ref.grid)
     pet.grid <- out$ref.grid

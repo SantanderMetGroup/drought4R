@@ -28,11 +28,11 @@ to \strong{climate4R} input grids
 \examples{
 # By default, et0.grid is null, and SPI is computed from precipitation: 
 data("pr.cru.iberia")
-spi3 <- speiGrid(pr.grid = pr.cru.iberia, scale = 3)
+spi3 <- speiGrid(pr.grid = pr.cru.iberia, scale = 3, na.rm = TRUE)
 ## If PET is used, then SPEI is calculated
 data("tas.cru.iberia")
 et0.grid <- petGrid(tas = tas.cru.iberia, method = "thornthwaite")
-spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3)
+spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, na.rm = TRUE)
 }
 \seealso{
 \code{\link{petGrid}}, for PET calculation
