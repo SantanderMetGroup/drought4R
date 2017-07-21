@@ -50,7 +50,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
     coords <- getCoordinates(pr.grid)
     dimNames <- getDim(pr.grid)
     n.mem <- getShape(pr.grid, "member")
-    method <- ifelse(is.null(et0.grid), "SPI", "SPEI")
+    method <- paste(ifelse(is.null(et0.grid), "SPI", "SPEI"), scale, sep = "-")
     message("[", Sys.time(), "] Computing ", method, " ...")
     spei.list <- lapply(1:n.mem, function(x) {
         pr <- subsetGrid(pr.grid, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
@@ -68,8 +68,8 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
     pr.grid$Data <- do.call("abind", c(spei.list, along = -1L)) %>% unname()
     attr(pr.grid$Data, "dimensions") <- dimNames
     pr.grid <- redim(pr.grid, drop = TRUE)
-    pr.grid$Variable$varName <- paste(method, scale, sep = "_")
-    longname <- ifelse(method == "SPI", "Standardized Precipitation Index", "Standardized Precipitation-Evapotranspiration Index")
+    pr.grid$Variable$varName <- method
+    longname <- ifelse(grepl("SPI", method), "Standardized Precipitation Index", "Standardized Precipitation-Evapotranspiration Index")
     attr(pr.grid$Variable, "longname") <- paste(longname, scale)
     attr(pr.grid$Variable, "units") <- "n/d"
     attr(pr.grid$Variable, "daily_agg_cellfun") <- "sum"
