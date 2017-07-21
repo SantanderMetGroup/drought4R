@@ -76,7 +76,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
     attr(pr.grid$Variable, "monthly_agg_cellfun") <- "sum"
     attr(pr.grid$Variable, "time_resolution") <- "MM"
     attr(pr.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
-                                       packageVersion("SPEI"), "using R package 'drought4R' v",
+                                       packageVersion("SPEI"), " using R package 'drought4R' v",
                                        packageVersion("drought4R"))
     attr(pr.grid, "URL") <- "https://github.com/SantanderMetGroup/drought4R"
     invisible(pr.grid)
