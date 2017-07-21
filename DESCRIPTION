@@ -10,7 +10,7 @@ Imports:
 Suggests:
     loadeR,
 Type: Package
-Title: An R package for drought assessment fully integrated in the climate4R bundle
+Title: An R package for drought assessment seamlessly integrated in the climate4R bundle
 Version: 0.0.2
 Date: 2017-07-21
 Authors@R: as.person(c(
