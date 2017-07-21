@@ -74,7 +74,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, ...) {
     attr(pr.grid$Variable, "units") <- "n/d"
     attr(pr.grid$Variable, "daily_agg_cellfun") <- "sum"
     attr(pr.grid$Variable, "monthly_agg_cellfun") <- "sum"
-    attr(pr.grid$Variable, "time_resolution") <- "MM"
+    attr(pr.grid$Variable, "verification_timestep") <- "MM"
     attr(pr.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
                                        packageVersion("SPEI"), " using R package 'drought4R' v",
                                        packageVersion("drought4R"))
