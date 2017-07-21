@@ -94,7 +94,7 @@ petGrid <- function(tasmin = NULL,
     attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
     attr(pet.grid$Variable, "time_resolution") <- "MM"
     attr(pet.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
-                                       packageVersion("SPEI"), "using R package 'drought4R' v",
+                                       packageVersion("SPEI"), " using 'drought4R' v",
                                        packageVersion("drought4R"))
     attr(pet.grid, "URL") <- "https://github.com/SantanderMetGroup/drought4R"
     pet.grid <- redim(pet.grid, drop = TRUE)
@@ -134,6 +134,7 @@ petGrid.th <- function(tas, ...) {
 
 #' @importFrom SPEI hargreaves
 #' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution
+#' @importFrom magrittr %<>% 
 #' @keywords internal    
 #' @author J Bedia
 
@@ -142,6 +143,9 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
         stop("tasmin, tasmax and pr grids are required by Hargreaves method", call. = FALSE)
     }
     if (getTimeResolution(tasmin) != "MM") stop("A monthly input grid is required by the Hargreaves method")
+    tasmin %<>% redim(member = TRUE)
+    tasmax %<>% redim(member = TRUE)
+    pr %<>% redim(member = TRUE)
     checkDim(tasmin, tasmax, pr)
     ref.grid <- tasmin
     coords <- getCoordinates(tasmin)
