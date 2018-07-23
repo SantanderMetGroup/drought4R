@@ -1,6 +1,6 @@
 ##     petGrid.R Compute Potential Evapotranspiration Grids
 ##
-##     Copyright (C) 2017 Santander Meteorology Group (http://www.meteo.unican.es)
+##     Copyright (C) 2018 Santander Meteorology Group (http://www.meteo.unican.es)
 ##
 ##     This program is free software: you can redistribute it and/or modify
 ##     it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ petGrid.th <- function(tas, ...) {
 }
 
 #' @importFrom SPEI hargreaves
-#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution
+#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution checkTemporalConsistency
 #' @importFrom magrittr %<>% 
 #' @keywords internal    
 #' @author J Bedia
@@ -148,7 +148,8 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
     tasmin %<>% redim(member = TRUE)
     tasmax %<>% redim(member = TRUE)
     pr %<>% redim(member = TRUE)
-    checkDim(tasmin, tasmax, pr)
+    suppressMessages(checkDim(tasmin, tasmax, pr))
+    checkTemporalConsistency(tasmin, tasmax, pr)
     ref.grid <- tasmin
     coords <- getCoordinates(tasmin)
     lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
