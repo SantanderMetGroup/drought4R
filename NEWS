@@ -1,13 +1,16 @@
-v0.0.0
-======
+# drought4R changelog
+
+## v0.0.0
 * First package release
 
-v0.0.1
-======
+## v0.0.1
 * Bug fix (forgot to pass the ellipsis to the inner functions)
 
-v0.0.2
-======
+## v0.0.2 (23 Jul 2017)
+
 * Bug fix in Hargreaves PET subroutine (forgot to `redim(member = TRUE)` the input grids before passing to member iterator)
 * Minor changes in output data attribute definitions
 
+## v0.1.0 (23 Jul 2018)
+* Include internal representation of matrices as `ts`-class to allow for reference period usage in SPI/SPEI calculation 
+* Update the "units" attribute of SPI/SPEI (set to "dimensionless")
