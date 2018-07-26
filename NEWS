@@ -15,3 +15,6 @@
 * Include internal representation of matrices as `ts`-class to allow for reference period usage in SPI/SPEI calculation 
 * Update the "units" attribute of SPI/SPEI (set to "dimensionless")
 * Add example vignette showing integration with UDG (type `utils::RShowDoc("drought4R_notebook", package = "drought4R"))
+
+## v0.1.1 (in devel)
+* Updated vignette
