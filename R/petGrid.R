@@ -22,7 +22,11 @@
 #' @param tasmin Grid of minimum monthly temperature (degC)
 #' @param pr Grid of total monthly precipitation amount (mm/month)
 #' @param method Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
-#' \code{"hargreaves"} methods are available. See details.
+#' \code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
+#' In addition, \code{"hargreaves-samani"} is available for daily data. See details.
+#' @param what Optional character string, only applied for the Hargreaves-Samani method.
+#' If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
+#' Otherwise, by default, returns the estimated daily potential evapotranspiration.
 #' @param ... Further arguments passed to the PET internals
 #' @details
 #' This function is a wrapper of the functions with the same name as given in \code{method}
@@ -76,13 +80,15 @@ petGrid <- function(tasmin = NULL,
                     tasmax = NULL,
                     tas = NULL,
                     pr = NULL,
-                    method = c("thornthwaite", "hargreaves"),
+                    method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
+                    what = c("PET", "rad"),
                     ...) {
-    method <- match.arg(method, choices = c("thornthwaite", "hargreaves"))
+    method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "hargreaves-samani"))
     message("[", Sys.time(), "] Computing PET-", method, " ...")
     out <- switch(method,
            "thornthwaite" = petGrid.th(tas, ...),
-           "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...))
+           "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
+           "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
     message("[", Sys.time(), "] Done")
     ## Recover the grid structure -----------------------
     coords <- getCoordinates(out$ref.grid)
@@ -91,13 +97,24 @@ petGrid <- function(tasmin = NULL,
     attr(pet.grid$Data, "dimensions") <- getDim(out$ref.grid)
     pet.grid$Variable$varName <- paste("PET", method, sep = "_")
     attr(pet.grid$Variable, "longname") <- paste("potential_evapotranspiration", method, sep = "_")
-    attr(pet.grid$Variable, "units") <- "mm.month-1"
+    attr(pet.grid$Variable, "description") <- attr(pet.grid$Variable, "longname")
     attr(pet.grid$Variable, "daily_agg_cellfun") <- "sum"
-    attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
-    attr(pet.grid$Variable, "verification_timestep") <- "MM"
-    attr(pet.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
-                                       packageVersion("SPEI"), " using 'drought4R' v",
-                                       packageVersion("drought4R"))
+    tres <- getTimeResolution(out$ref.grid)
+    attr(pet.grid$Variable, "verification_timestep") <- tres
+    if (tres == "MM") {
+        attr(pet.grid$Variable, "units") <- "mm.month-1"    
+        attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
+    } else if (tres == "DD") {
+        attr(pet.grid$Variable, "units") <- "mm.day-1"    
+    }
+    if (method == "thornthwaite" | method == "hargreaves") {
+        attr(pet.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
+                                           packageVersion("SPEI"), " using 'drought4R' v",
+                                           packageVersion("drought4R"))
+    } else {
+        attr(pet.grid, "origin") <- paste0("Calculated with 'drought4R' v",
+                                           packageVersion("drought4R"))
+    }
     attr(pet.grid, "URL") <- "https://github.com/SantanderMetGroup/drought4R"
     pet.grid <- redim(pet.grid, drop = TRUE)
     invisible(pet.grid)
@@ -177,6 +194,50 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
 
 
 
+#' @import transformeR
+#' @author J. Bedia, M. Iturbide
+#' @import transformeR
+#' @importFrom magrittr extract extract2 %>% %<>% 
+#' @keywords internal    
+
+petGrid.hs <- function(tasmin, tasmax, what) {
+    tasmin %<>% redim(member = TRUE)
+    tasmax %<>% redim(member = TRUE)
+    suppressMessages(checkDim(tasmin, tasmax))
+    checkTemporalConsistency(tasmin, tasmax)
+    if (isFALSE(getTimeResolution(tasmin) == "DD")) {
+        stop("Hargreaves-Samani method is meant for daily data", call. = FALSE)
+    }
+    if (typeofGrid(tasmin) == "rotated_grid") {
+        stop("Rotated grids are unsupported. Please consider regridding", call. = FALSE)
+    }
+    what = match.arg(what, choices = c("PET", "rad"))
+    lats <- getCoordinates(tasmin) 
+    if (is.data.frame(lats)) {
+        lats %<>% extract2("y")
+    } else {
+        lats %<>% expand.grid() %>% extract(,2)
+    }
+    lats <- lats * (pi / 180) 
+    J <- getRefDates(tasmin) %>% as.Date() %>% format("%j") %>% as.integer()
+    Gsc <- 0.082
+    ds <- 0.409 * sin(2 * pi * J / 365 - 1.39)
+    n.mem <- getShape(tasmin, "member")
+    aux.lat <- matrix(lats, nrow = length(J), ncol = length(lats), byrow = TRUE) 
+    ws <- acos(-tan(aux.lat) * tan(ds))    
+    dr <- 1 + 0.033 * cos(2 * pi * J / 365)
+    Ra <- (24 * 60 * Gsc * dr * (ws * sin(aux.lat) * sin(ds) + cos(aux.lat) * cos(ds) * sin(ws))) / pi
+    et0.list <- lapply(1:n.mem, function(x) {
+        if (what == "rad") {
+            return(Ra)
+        } else {
+            tn <- subsetGrid(tasmin, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+            tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+            .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(tx - tn) %>% return()
+        }
+    })
+    return(list("et0.list" = et0.list, "ref.grid" = tasmin))
+}
 
 
 

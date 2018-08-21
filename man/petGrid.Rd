@@ -5,7 +5,8 @@
 \title{Calculation of Potential Evapotranspiration}
 \usage{
 petGrid(tasmin = NULL, tasmax = NULL, tas = NULL, pr = NULL,
-  method = c("thornthwaite", "hargreaves"), ...)
+  method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
+  what = c("PET", "rad"), ...)
 }
 \arguments{
 \item{tasmin}{Grid of minimum monthly temperature (degC)}
@@ -17,7 +18,12 @@ petGrid(tasmin = NULL, tasmax = NULL, tas = NULL, pr = NULL,
 \item{pr}{Grid of total monthly precipitation amount (mm/month)}
 
 \item{method}{Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
-\code{"hargreaves"} methods are available. See details.}
+\code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
+In addition, \code{"hargreaves-samani"} is available for daily data. See details.}
+
+\item{what}{Optional character string, only applied for the Hargreaves-Samani method.
+If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
+Otherwise, by default, returns the estimated daily potential evapotranspiration.}
 
 \item{...}{Further arguments passed to the PET internals}
 }
