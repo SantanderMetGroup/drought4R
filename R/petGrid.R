@@ -199,6 +199,8 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
 #' @import transformeR
 #' @importFrom magrittr extract extract2 %>% %<>% 
 #' @keywords internal    
+#' @note This function is intended for daily data only. 
+#' For hourly or shorter periods, see FAO, eq. 28 p47 (not implemented yet)
 
 petGrid.hs <- function(tasmin, tasmax, what) {
     tasmin %<>% redim(member = TRUE)
@@ -218,6 +220,59 @@ petGrid.hs <- function(tasmin, tasmax, what) {
     } else {
         lats %<>% expand.grid() %>% extract(,2)
     }
+    lats <- lats * (pi / 180) ## Conversion decimal degrees --> radians
+    J <- getRefDates(tasmin) %>% as.Date() %>% format("%j") %>% as.integer()
+    Gsc <- 0.082 ## Solar constant (MJ.m-2.min-1)
+    ds <- 0.409 * sin(2 * pi * J / 365 - 1.39) ## Solar declination, FAO, eq. 24 (p. 46)
+    n.mem <- getShape(tasmin, "member")
+    aux.lat <- matrix(lats, nrow = length(J), ncol = length(lats), byrow = TRUE) 
+    ws <- acos(-tan(aux.lat) * tan(ds))   ## Sunset hour angle, FAO, eq. 25 (p. 46)
+    dr <- 1 + 0.033 * cos(2 * pi * J / 365) ## inverse relative distance Earth-Sun , FAO, eq. 23 (p. 46)
+    Ra <- (24 * 60 * Gsc * dr * (ws * sin(aux.lat) * sin(ds) + cos(aux.lat) * cos(ds) * sin(ws))) / pi ## FAO, eq. 21 (p. 46)
+    et0.list <- lapply(1:n.mem, function(x) {
+        if (what == "rad") {
+            return(Ra)
+        } else {
+            tn <- subsetGrid(tasmin, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+            tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+            trng <- tx - tn
+            # Ensure that no negative temperature daily ranges exist
+            if (any(trng < 0)) {
+                trng[which(trng < 0)] <- 0
+            }
+            .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(trng) %>% return() ## FAO, eq. 52 (p. 64), applying conversion of units to Ra (MJ.m-2.day-1 --> mm.day-1)
+        }
+    })
+    return(list("et0.list" = et0.list, "ref.grid" = tasmin))
+}
+
+
+
+
+#' @import transformeR
+#' @author J. Bedia, M. Iturbide
+#' @import transformeR
+#' @importFrom magrittr extract extract2 %>% %<>% 
+#' @keywords internal    
+
+petGrid.pm <- function(tasmin, tasmax, elev, u2, HRm, what) {
+    tasmin %<>% redim(member = TRUE)
+    tasmax %<>% redim(member = TRUE)
+    suppressMessages(checkDim(tasmin, tasmax))
+    checkTemporalConsistency(tasmin, tasmax)
+    if (isFALSE(getTimeResolution(tasmin) == "DD")) {
+        stop("Penman-Monteith method is meant for daily data", call. = FALSE)
+    }
+    if (typeofGrid(tasmin) == "rotated_grid") {
+        stop("Rotated grids are unsupported. Please consider regridding", call. = FALSE)
+    }
+    what = match.arg(what, choices = c("PET", "rad"))
+    lats <- getCoordinates(tasmin) 
+    if (is.data.frame(lats)) {
+        lats %<>% extract2("y")
+    } else {
+        lats %<>% expand.grid() %>% extract(,2)
+    }
     lats <- lats * (pi / 180) 
     J <- getRefDates(tasmin) %>% as.Date() %>% format("%j") %>% as.integer()
     Gsc <- 0.082
@@ -225,20 +280,33 @@ petGrid.hs <- function(tasmin, tasmax, what) {
     n.mem <- getShape(tasmin, "member")
     aux.lat <- matrix(lats, nrow = length(J), ncol = length(lats), byrow = TRUE) 
     ws <- acos(-tan(aux.lat) * tan(ds))    
+    N <- 24 / pi * ws ## Daylight hours, FAO, eq. 34 (p. 48)
     dr <- 1 + 0.033 * cos(2 * pi * J / 365)
     Ra <- (24 * 60 * Gsc * dr * (ws * sin(aux.lat) * sin(ds) + cos(aux.lat) * cos(ds) * sin(ws))) / pi
+    P <- 101.3 * ((293 - 0.0065 * elev) / 293) ^ 5.26
+    Rs <- (0.25 + 0.5 * (n/N)) * Ra ## Solar radiation using Angstron formula, FAO, eq. 35 (p. 50)
+    Rso <- (0.75 + 2/100000) * Ra
+    Rns <- 0.77 * Rs  
+    o <- 4.903/1000000000
     et0.list <- lapply(1:n.mem, function(x) {
         if (what == "rad") {
             return(Ra)
         } else {
             tn <- subsetGrid(tasmin, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
             tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
-            .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(tx - tn) %>% return()
+            tm <- (tx + tn) / 2
+            lam <- 2.501 - (2.361 / 1000) * tm
+            y <- 0.00163 * (P / lam)
+            es <- (0.6108 * exp(17.27 * tn / (tn + 237.3)) + 0.6108 * exp(17.27 * tx / (tx + 237.3))) / 2
+            ea <- es * HRm / 100
+            Rnl <- o * (tm + 273.16) * (0.34 - 0.14 * ea^0.5) * (1.35 * Rs / Rso - 0.35)
+            Rn <- Rns - Rnl
+            A <- (4098 * es) / (tm + 237.3)^2
+            ((0.408 * A * Rn) + (y * 900 * u2 * (es - ea)) / (tm + 273)) / (A + y * (1 + 0.34 * u2)) %>% return()
         }
     })
     return(list("et0.list" = et0.list, "ref.grid" = tasmin))
 }
-
 
 
 
