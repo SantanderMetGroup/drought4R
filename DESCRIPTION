@@ -9,19 +9,20 @@ Imports:
     magrittr
 Suggests:
     loadeR,
+    visualizeR,
     convertR
 Type: Package
-Title: An R package for drought assessment of the climate4R framework <http://www.meteo.unican.es/climate4R>
+Title: A climate4R package for drought assessment <http://www.meteo.unican.es/climate4R>
 Version: 0.2.0
-Date: 2018-08-21
+Date: 2019-04-24
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",
     "Maialen Iturbide <miturbide@ifca.unican.es> [aut]"))
 BugReports: https://github.com/SantanderMetGroup/drought4R/issues
 URL: https://github.com/SantanderMetGroup/transformeR/wiki
-Description: Drought index calculation using the climate4R Common Data Model structures <http://www.meteo.unican.es/climate4R>.
+Description: Evapotranspiration routines and drought index calculation using the climate4R framework <http://www.meteo.unican.es/climate4R>.
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

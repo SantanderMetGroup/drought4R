@@ -37,11 +37,13 @@ The latitude of the sites/grid points is internally used.
 In case of multimember grids (e.g. seasonal forecast data), the PET is calculated for each member sepparately.
 }
 \examples{
+\donttest{
 # Thorthwaite requires monthly mean temperature data as input:
 data("tas.cru.iberia")
 thpet <- petGrid(tas = tas.cru.iberia, method = "thornthwaite")
 require(transformeR)
 require(magrittr)
+require(visualizeR)
 # This is the climatology (by seasons)
 seasons <- list("DJF" = c(12,1,2), "MAM" = 3:5, "JJA" = 6:8, "SON" = 9:11)
 season.list <- lapply(1:length(seasons), function(x) {
@@ -49,9 +51,10 @@ season.list <- lapply(1:length(seasons), function(x) {
                aggregateGrid(aggr.y = list(FUN = "sum")) \%>\% climatology()
 })
 mg <- makeMultiGrid(season.list, skip.temporal.check = TRUE)
-plotClimatology(mg, names.attr = names(seasons), at = seq(0, 525, 10),
-                backdrop.theme = "coastline",
-                main = "Mean Potential Evapotranspiration Thornthwaite (1981-2010, mm/season)")
+spatialPlot(mg, names.attr = names(seasons), at = seq(0, 525, 10),
+            backdrop.theme = "coastline",
+            main = "Mean Potential Evapotranspiration Thornthwaite (1981-2010, mm/season)",
+            rev.colors = TRUE)
 # A typical operation is computing trends
 # Here we are interested in the JJA PET trend in Iberia:
 # We consider the annually aggregated PET series (n = 30 years)
@@ -59,18 +62,21 @@ jja.pet <- subsetGrid(thpet, season = 6:8) \%>\% aggregateGrid(aggr.y = list(FUN
 trend.thpet <- climatology(jja.pet, clim.fun = list(FUN = "trend.1D",
                                                     dates = getRefDates(jja.pet),
                                                     method = "kendall"))
-plotClimatology(trend.thpet, backdrop.theme = "countries",
-                main = "Mann-Kendall Tau PET trend (JJA, 1981-2010)")
+spatialPlot(trend.thpet, backdrop.theme = "countries",
+            main = "Mann-Kendall Tau PET trend (JJA, 1981-2010)",
+            rev.colors = TRUE)
 pval.estimate <- climatology(jja.pet, clim.fun = list(FUN = "trend.1D",
                                                       dates = getRefDates(jja.pet),
                                                       method = "kendall",
                                                       return.pvalue = TRUE))
 sig.points <- map.stippling(clim = pval.estimate, threshold = 0.05, condition = "LT", 
                             pch = 19, cex = .5, col = "purple")
-plotClimatology(trend.thpet, backdrop.theme = "countries",
-                main = "Mann-Kendall Tau PET trend (JJA, 1981-2010)",
-                sp.layout = list(sig.points))
+spatialPlot(trend.thpet, backdrop.theme = "countries",
+            rev.colors = TRUE,
+            main = "Mann-Kendall Tau PET trend (JJA, 1981-2010)",
+            sp.layout = list(sig.points))
 # See further examples in 'help(trend.1D)'
+}
 }
 \author{
 J Bedia

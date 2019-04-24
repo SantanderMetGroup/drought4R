@@ -16,6 +16,7 @@
 * Update the "units" attribute of SPI/SPEI (set to "dimensionless")
 * Add example vignette showing integration with UDG (type `utils::RShowDoc("drought4R_notebook", package = "drought4R"))
 
-## v0.2.0 (21 Aug 2018)
+## v0.2.0 (24 Apr 2019)
 * Implements the new PET method Hargreaves-Samani for daily data
-* Updated vignette
+* Other minor improvements
+* Removed vignette (now linked to paper supplementary information http://www.meteo.unican.es/work/climate4r/drought4R/drought4R_notebook.html)

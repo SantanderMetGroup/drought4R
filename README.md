@@ -13,11 +13,8 @@ devtools::install_github("SantanderMetGroup/drought4R")
 ```
 ## Worked examples
 
-A [worked example](http://www.meteo.unican.es/work/climate4r/drought4R/drought4R_notebook.html) showing how to compute bias-corrected SPEI projections using Euro-CORDEX data from the User Data Gateway is provided in the package documentation. Once the package has been installed, type:
+A [worked example](http://www.meteo.unican.es/work/climate4r/drought4R/drought4R_notebook.html) showing how to compute bias-corrected SPEI projections using Euro-CORDEX data from the User Data Gateway is available.
 
-```R
-utils::RShowDoc("drought4R_notebook", package = "drought4R")
-```
 
     
 

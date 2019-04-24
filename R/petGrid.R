@@ -201,6 +201,8 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
 #' @keywords internal    
 #' @note This function is intended for daily data only. 
 #' For hourly or shorter periods, see FAO, eq. 28 p47 (not implemented yet)
+#' @references Allen, R.G., Pereira, L.S., Raes, D., Smith, M., 2006. FAO Irrigation and Drainage Paper. Crop Evapotranspiration (guidelines for computing crop water requirements) (No. 56). FAO.
+
 
 petGrid.hs <- function(tasmin, tasmax, what) {
     tasmin %<>% redim(member = TRUE)
@@ -254,6 +256,8 @@ petGrid.hs <- function(tasmin, tasmax, what) {
 #' @import transformeR
 #' @importFrom magrittr extract extract2 %>% %<>% 
 #' @keywords internal    
+#' Allen, R.G., Pereira, L.S., Raes, D., Smith, M., 2006. FAO Irrigation and Drainage Paper. Crop Evapotranspiration (guidelines for computing crop water requirements) (No. 56). FAO.
+
 
 petGrid.pm <- function(tasmin, tasmax, elev, u2, HRm, what) {
     tasmin %<>% redim(member = TRUE)
