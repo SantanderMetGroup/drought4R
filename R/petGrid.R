@@ -109,7 +109,6 @@ petGrid <- function(tasmin = NULL,
                     k.th = NULL,
                     ...) {
     method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "hargreaves-samani"))
-    if (!is.null(k.th)) kth <- match.arg(k.th, choices = c(0.69, 0.72))
     message("[", Sys.time(), "] Computing PET-", method, " ...")
     out <- switch(method,
            "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k.th, ...),
