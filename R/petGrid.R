@@ -24,6 +24,7 @@
 #' @param method Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
 #' \code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
 #' In addition, \code{"hargreaves-samani"} is available for daily data. See details.
+#' @param k.th Optional calibration coefficient for the Thornthwaite method. Unused by default. See Details.
 #' @param what Optional character string, only applied for the Hargreaves-Samani method.
 #' If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
 #' Otherwise, by default, returns the estimated daily potential evapotranspiration.
@@ -33,12 +34,30 @@
 #' from the \pkg{SPEI} package (Begueria and Vicente-Serrano). Monthly input data are thus required. 
 #' The latitude of the sites/grid points is internally used.
 #' In case of multimember grids (e.g. seasonal forecast data), the PET is calculated for each member sepparately. 
+#' 
+#' \strong{Calibration coefficient for Thornthwaite}
+#' 
+#' The use of a calibration coefficient (\code{k.th} argument) can provide better PET estimates under certain conditions. For instance,
+#' Camargo \emph{et al.} (1999) found that a value of k=0.72 is the best for estimating monthly ET0, while Pereira and Pruitt (2004)
+#' recommended k=0.69 for daily ET0. Trajkovic et al. (2019) propose an optimal calibration factor of 0.65 after an intercomparison of
+#' several PET estimation methods and calibration coefficients in northern Serbia. 
+#' 
+#' \strong{Note:} the calibration factor for the Thorthwaite method requires minimum and maximum temperatures instead of mean temperature, 
+#' as it also includes thermal amplitude in its formulation.
+#' 
 #' @importFrom transformeR array3Dto2Dmat mat2Dto3Darray checkDim getCoordinates getDim
 #' @importFrom utils packageVersion
 #' @importFrom abind abind
 #' @importFrom magrittr %>% 
 #' @author J Bedia
 #' @export
+#' @references 
+#' \itemize{
+#' \item Camargo AP, Marin FR, Sentelhas PC, Picini AG (1999) Adjust of the Thornthwaite’s method to estimate the potential evapotranspiration for 
+#' arid and superhumid climates, based on daily temperature amplitude. Rev Bras Agrometeorol 7(2):251–257
+#' \item Pereira, A.R., Pruitt, W.O., 2004. Adaptation of the Thornthwaite scheme for estimating daily reference evapotranspiration. Agricultural Water Management 66, 251–257. https://doi.org/10.1016/j.agwat.2003.11.003
+#' \item Trajkovic, S., Gocic, M., Pongracz, R., Bartholy, J., 2019. Adjustment of Thornthwaite equation for estimating evapotranspiration in Vojvodina. Theor Appl Climatol. https://doi.org/10.1007/s00704-019-02873-1
+#' }
 #' @examples \donttest{
 #' # Thorthwaite requires monthly mean temperature data as input:
 #' data("tas.cru.iberia")
@@ -87,11 +106,13 @@ petGrid <- function(tasmin = NULL,
                     pr = NULL,
                     method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
                     what = c("PET", "rad"),
+                    k.th = NULL,
                     ...) {
     method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "hargreaves-samani"))
+    if (!is.null(k.th)) kth <- match.arg(k.th, choices = c(0.69, 0.72))
     message("[", Sys.time(), "] Computing PET-", method, " ...")
     out <- switch(method,
-           "thornthwaite" = petGrid.th(tas, ...),
+           "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k.th, ...),
            "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
            "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
     message("[", Sys.time(), "] Done")
@@ -127,16 +148,28 @@ petGrid <- function(tasmin = NULL,
 
 
 #' @importFrom SPEI thornthwaite
-#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution redim getShape subsetGrid
+#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution redim getShape subsetGrid gridArithmetics
 #' @keywords internal    
 #' @author J Bedia
 
-petGrid.th <- function(tas, ...) {
+petGrid.th <- function(tas, tasmin, tasmax, k.th, ...) {
     if (is.null(tas)) {
-        stop("Mean temperature grid is required by Thornthwaite method", call. = FALSE)
+        if (is.null(tasmin) | is.null(tasmax)) {
+            stop("\'tas\' has been set to NULL. Therefore, both \'tasmin\' and \'tasmax\' arguments are required by Thornthwaite method", call. = FALSE)
+        }
+        tas <- if (!is.null(k.th)) {
+            ## Effective temp. See equation 5 Trajkovic et al. 2019
+            gridArithmetics(tasmax, 3, tasmin, operator = c("*", "-")) %>% gridArithmetics(., 0.5 * k.th, operator = "*") 
+        } else {
+            gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
+        }
+    } else {
+        if (!is.null(tasmin) | !is.null(tasmax)) {
+            message("\'tas\' argument has been provided. Therefore, \'tasmin\' and \'tasmax\' arguments will be ignored.")
+        }
     }
     if (!identical(1:12, getSeason(tas))) stop("The input grid must encompass a whole-year season")
-    if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method")
+    if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method", call. = FALSE)
     tas <- redim(tas, member = TRUE)
     ref.grid <- tas
     coords <- getCoordinates(tas)
