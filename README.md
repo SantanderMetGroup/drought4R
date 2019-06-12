@@ -2,7 +2,7 @@
 
 A drought assessment package for the [climate4R](http://www.meteo.unican.es/climate4r) Framework for climate data access and analysis.
 
-This package is a wrapper to the R package SPEI (Beguería and Serrano 2017), tailored to its usage with large climate model datasets within climate4R.
+This package is a wrapper to the R package SPEI (Beguería and Serrano 2017), tailored to its usage with large climate model datasets within climate4R. It also includes new routines for daily evapotranspiration estimation.
 
 ## Installation
 

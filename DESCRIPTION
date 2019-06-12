@@ -12,16 +12,16 @@ Suggests:
     visualizeR,
     convertR
 Type: Package
-Title: A climate4R package for drought assessment <http://www.meteo.unican.es/climate4R>
-Version: 0.2.0
-Date: 2019-04-24
+Title: A climate4R package for PET estimation and drought assessment <http://www.meteo.unican.es/climate4R>
+Version: 0.2.1
+Date: 2019-06-12
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",
     "Maialen Iturbide <miturbide@ifca.unican.es> [aut]"))
 BugReports: https://github.com/SantanderMetGroup/drought4R/issues
 URL: https://github.com/SantanderMetGroup/transformeR/wiki
-Description: Evapotranspiration routines and drought index calculation using the climate4R framework <http://www.meteo.unican.es/climate4R>.
+Description: Potential evapotranspiration methods and drought index calculation using the climate4R framework <http://www.meteo.unican.es/climate4R>.
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
