@@ -30,9 +30,10 @@
 #' @export
 
 effectiveTempGrid <- function(tasmin = NULL, tasmax = NULL, k = 0.69) {
-    if (!is.null(tasmin) | !is.null(tasmax)) {
+    if (is.null(tasmin) | is.null(tasmax)) {
         stop("Both \'tasmin\' and \'tasmax\' arguments are required for effective temperature computation", call. = FALSE)
     }
+    if (is.null(k)) stop("A calibration factor \'k\' is required", call. = FALSE)
     checkDim(tasmin, tasmax, dimensions = c("time", "lat", "lon"))
     checkTemporalConsistency(tasmin, tasmax)
     if ((getTimeResolution(tasmax) != "DD" | getTimeResolution(tasmin) != "DD")) stop("Daily data are required for effective temperature computation", call. = FALSE)
