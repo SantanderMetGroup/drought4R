@@ -6,15 +6,16 @@ Imports:
     transformeR(>= 1.4.4),
     utils,
     abind,
-    magrittr
+    magrittr,
+    geosphere
 Suggests:
     loadeR,
     visualizeR,
     convertR
 Type: Package
 Title: A climate4R package for PET estimation and drought assessment <http://www.meteo.unican.es/climate4R>
-Version: 0.2.1
-Date: 2019-06-12
+Version: 0.3.0
+Date: 2019-06-13
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",

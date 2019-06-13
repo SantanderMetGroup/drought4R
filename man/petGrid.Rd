@@ -46,7 +46,7 @@ recommended k=0.69 for daily ET0. Trajkovic et al. (2019) propose an optimal cal
 several PET estimation methods and calibration coefficients in northern Serbia. 
 
 \strong{Note:} the calibration factor for the Thorthwaite method requires minimum and maximum temperatures instead of mean temperature, 
-as it also includes thermal amplitude in its formulation.
+as it also includes temperature amplitude in its formulation.
 }
 \examples{
 \donttest{

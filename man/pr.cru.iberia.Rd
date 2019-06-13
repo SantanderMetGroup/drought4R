@@ -14,8 +14,8 @@ Gridded observations of monthly accumulated precipitation for the Iberian Penins
 }
 \examples{
 data("pr.cru.iberia")
-require(transformeR)
-plotClimatology(climatology(pr.cru.iberia), backdrop.theme = "countries")
+require(visualizeR)
+spatialPlot(climatology(pr.cru.iberia), backdrop.theme = "countries")
 }
 \references{
 \itemize{

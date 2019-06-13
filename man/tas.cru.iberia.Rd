@@ -14,8 +14,8 @@ Gridded observations of monthly mean surface temperature for the Iberian Peninsu
 }
 \examples{
 data("tas.cru.iberia")
-require(transformeR)
-plotClimatology(climatology(tas.cru.iberia), backdrop.theme = "countries")
+require(visualizeR)
+spatialPlot(climatology(tas.cru.iberia), backdrop.theme = "countries", rev.colors = TRUE)
 }
 \references{
 \itemize{
