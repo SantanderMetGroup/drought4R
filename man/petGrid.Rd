@@ -6,7 +6,7 @@
 \usage{
 petGrid(tasmin = NULL, tasmax = NULL, tas = NULL, pr = NULL,
   method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
-  what = c("PET", "rad"), k.th = NULL, ...)
+  what = c("PET", "rad"), k = NULL, photoperiod.corr = TRUE, ...)
 }
 \arguments{
 \item{tasmin}{Grid of minimum monthly temperature (degC)}
@@ -25,7 +25,10 @@ In addition, \code{"hargreaves-samani"} is available for daily data. See details
 If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
 Otherwise, by default, returns the estimated daily potential evapotranspiration.}
 
-\item{k.th}{Optional calibration coefficient for the Thornthwaite method. Unused by default. See Details.}
+\item{k}{Optional calibration coefficient for the Thornthwaite method. Unused by default. See Details.}
+
+\item{photoperiod.corr}{Correction with the day-night ratio applied to effective temperature (default to \code{TRUE}).
+Only applies to the calibrated Thorthwaite method.}
 
 \item{...}{Further arguments passed to the PET internals}
 }
@@ -44,6 +47,9 @@ The use of a calibration coefficient (\code{k.th} argument) can provide better P
 Camargo \emph{et al.} (1999) found that a value of k=0.72 is the best for estimating monthly ET0, while Pereira and Pruitt (2004)
 recommended k=0.69 for daily ET0. Trajkovic et al. (2019) propose an optimal calibration factor of 0.65 after an intercomparison of
 several PET estimation methods and calibration coefficients in northern Serbia. 
+
+In addition, the correction proposed by Pereira and Pruitt (equation 7) to account for the effect of differing photoperiods 
+can be omitted through the logical argument \code{photoperiod.corr = FALSE} (it is activated by default).
 
 \strong{Note:} the calibration factor for the Thorthwaite method requires minimum and maximum temperatures instead of mean temperature, 
 as it also includes temperature amplitude in its formulation.
