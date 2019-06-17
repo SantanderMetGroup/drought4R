@@ -37,6 +37,7 @@ effectiveTempGrid <- function(tasmin = NULL, tasmax = NULL, k = 0.69) {
     checkDim(tasmin, tasmax, dimensions = c("time", "lat", "lon"))
     checkTemporalConsistency(tasmin, tasmax)
     if ((getTimeResolution(tasmax) != "DD" | getTimeResolution(tasmin) != "DD")) stop("Daily data are required for effective temperature computation", call. = FALSE)
+    message("[", Sys.time(), "] Calculating effective temperature...")
     tasmin <- gridArithmetics(tasmax, 3, tasmin, operator = c("*", "-")) %>% gridArithmetics(., 0.5 * k, operator = "*") 
     tasmax <- NULL
     tasmin$Variable$varName <- "Effective_temperature"

@@ -44,6 +44,7 @@
 #'                                                        text = list(c("37ºN","39ºN","41ºN","43ºN")))))
 
 photoperiodGrid <- function(c4r.obj) {
+    message("[", Sys.time(), "] Calculating photoperiod...")
     j <- getRefDates(c4r.obj) %>% as.POSIXlt() %>% format(format = "%j") %>% as.integer()
     coords <- getCoordinates(c4r.obj)
     lats <- expand.grid(coords$y, coords$x)[2:1][,2]

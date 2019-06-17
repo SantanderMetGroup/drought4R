@@ -178,9 +178,9 @@ petGrid.th <- function(tas, tasmin, tasmax, k, phc, ...) {
                     tas$Data[ind.inf] <- tasmin$Data[ind.inf]
                     tasmax <- tasmin <- NULL
                 }
-                tas %<>%  aggregateGrid(aggr.m = list(FUN = "mean", na.rm = TRUE))
+                suppressMessages({tas %<>%  aggregateGrid(aggr.m = list(FUN = "mean", na.rm = TRUE))})
             } else {
-                tas <- aggregateGrid(tasmean, aggr.m = list(FUN = "mean", na.rm = TRUE))
+                suppressMessages({tas <- aggregateGrid(tasmean, aggr.m = list(FUN = "mean", na.rm = TRUE))})
             }
         } else {
             stop("Invalid temporal resolution of input data", call. = FALSE)    
