@@ -15,7 +15,7 @@ Suggests:
 Type: Package
 Title: A climate4R package for PET estimation and drought assessment <http://www.meteo.unican.es/climate4R>
 Version: 0.3.0
-Date: 2019-06-13
+Date: 2019-06-17
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",
