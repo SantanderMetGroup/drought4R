@@ -14,8 +14,8 @@ Gridded observations of monthly mean maximum surface temperature for the Iberian
 }
 \examples{
 data("tasmax.cru.iberia")
-require(transformeR)
-plotClimatology(climatology(tasmax.cru.iberia), backdrop.theme = "countries")
+require(visualizeR)
+spatialPlot(climatology(tasmax.cru.iberia), backdrop.theme = "countries", rev.colors = TRUE)
 }
 \references{
 \itemize{

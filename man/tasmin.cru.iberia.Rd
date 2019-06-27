@@ -14,8 +14,8 @@ Gridded observations of monthly mean minimum surface temperature for the Iberian
 }
 \examples{
 data("tasmin.cru.iberia")
-require(transformeR)
-plotClimatology(climatology(tasmin.cru.iberia), backdrop.theme = "countries")
+require(visualizeR)
+spatialPlot(climatology(tasmin.cru.iberia), backdrop.theme = "countries", rev.colors = TRUE)
 }
 \references{
 \itemize{

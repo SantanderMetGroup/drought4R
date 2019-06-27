@@ -24,6 +24,9 @@
 #' @param method Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
 #' \code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
 #' In addition, \code{"hargreaves-samani"} is available for daily data. See details.
+#' @param k Optional calibration coefficient for the Thornthwaite method. Unused by default. See Details.
+#' @param photoperiod.corr Correction with the day-night ratio applied to effective temperature (default to \code{TRUE}).
+#'  Only applies to the calibrated Thorthwaite method.
 #' @param what Optional character string, only applied for the Hargreaves-Samani method.
 #' If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
 #' Otherwise, by default, returns the estimated daily potential evapotranspiration.
@@ -33,12 +36,33 @@
 #' from the \pkg{SPEI} package (Begueria and Vicente-Serrano). Monthly input data are thus required. 
 #' The latitude of the sites/grid points is internally used.
 #' In case of multimember grids (e.g. seasonal forecast data), the PET is calculated for each member sepparately. 
+#' 
+#' \strong{Calibration coefficient for Thornthwaite}
+#' 
+#' The use of a calibration coefficient (\code{k.th} argument) can provide better PET estimates under certain conditions. For instance,
+#' Camargo \emph{et al.} (1999) found that a value of k=0.72 is the best for estimating monthly ET0, while Pereira and Pruitt (2004)
+#' recommended k=0.69 for daily ET0. Trajkovic et al. (2019) propose an optimal calibration factor of 0.65 after an intercomparison of
+#' several PET estimation methods and calibration coefficients in northern Serbia. 
+#' 
+#' In addition, the correction proposed by Pereira and Pruitt (equation 7) to account for the effect of differing photoperiods 
+#' can be omitted through the logical argument \code{photoperiod.corr = FALSE} (it is activated by default).
+#' 
+#' \strong{Note:} the calibration factor for the Thorthwaite method requires minimum and maximum temperatures instead of mean temperature, 
+#' as it also includes temperature amplitude in its formulation.
+#' 
 #' @importFrom transformeR array3Dto2Dmat mat2Dto3Darray checkDim getCoordinates getDim
 #' @importFrom utils packageVersion
 #' @importFrom abind abind
 #' @importFrom magrittr %>% 
 #' @author J Bedia
 #' @export
+#' @references 
+#' \itemize{
+#' \item Camargo AP, Marin FR, Sentelhas PC, Picini AG (1999) Adjust of the Thornthwaite’s method to estimate the potential evapotranspiration for 
+#' arid and superhumid climates, based on daily temperature amplitude. Rev Bras Agrometeorol 7(2):251–257
+#' \item Pereira, A.R., Pruitt, W.O., 2004. Adaptation of the Thornthwaite scheme for estimating daily reference evapotranspiration. Agricultural Water Management 66, 251–257. https://doi.org/10.1016/j.agwat.2003.11.003
+#' \item Trajkovic, S., Gocic, M., Pongracz, R., Bartholy, J., 2019. Adjustment of Thornthwaite equation for estimating evapotranspiration in Vojvodina. Theor Appl Climatol. https://doi.org/10.1007/s00704-019-02873-1
+#' }
 #' @examples \donttest{
 #' # Thorthwaite requires monthly mean temperature data as input:
 #' data("tas.cru.iberia")
@@ -87,11 +111,13 @@ petGrid <- function(tasmin = NULL,
                     pr = NULL,
                     method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
                     what = c("PET", "rad"),
+                    k = NULL,
+                    photoperiod.corr = TRUE,
                     ...) {
     method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "hargreaves-samani"))
     message("[", Sys.time(), "] Computing PET-", method, " ...")
     out <- switch(method,
-           "thornthwaite" = petGrid.th(tas, ...),
+           "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k, phc = photoperiod.corr, ...),
            "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
            "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
     message("[", Sys.time(), "] Done")
@@ -112,31 +138,60 @@ petGrid <- function(tasmin = NULL,
     } else if (tres == "DD") {
         attr(pet.grid$Variable, "units") <- "mm.day-1"    
     }
-    if (method == "thornthwaite" | method == "hargreaves") {
-        attr(pet.grid, "origin") <- paste0("Calculated with R package 'SPEI' v",
-                                           packageVersion("SPEI"), " using 'drought4R' v",
-                                           packageVersion("drought4R"))
-    } else {
-        attr(pet.grid, "origin") <- paste0("Calculated with 'drought4R' v",
-                                           packageVersion("drought4R"))
-    }
-    attr(pet.grid, "URL") <- "https://github.com/SantanderMetGroup/drought4R"
+    attr(pet.grid, "R_package_desc") <- paste0("drought4R-v", packageVersion("drought4R"))
+    attr(pet.grid, "R_package_URL") <- "https://github.com/SantanderMetGroup/drought4R"
+    attr(pet.grid, "R_package_ref") <- "http://dx.doi.org/10.1016/j.envsoft.2018.09.009"
     pet.grid <- redim(pet.grid, drop = TRUE)
     invisible(pet.grid)
 }
 
 
+
 #' @importFrom SPEI thornthwaite
-#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution redim getShape subsetGrid
+#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution redim getShape subsetGrid gridArithmetics checkTemporalConsistency checkDim aggregateGrid
+#' @importFrom magrittr %>% %<>% 
 #' @keywords internal    
 #' @author J Bedia
 
-petGrid.th <- function(tas, ...) {
+petGrid.th <- function(tas, tasmin, tasmax, k, phc, ...) {
     if (is.null(tas)) {
-        stop("Mean temperature grid is required by Thornthwaite method", call. = FALSE)
+        if (is.null(tasmin) | is.null(tasmax)) {
+            stop("\'tas\' has been set to NULL. Therefore, both \'tasmin\' and \'tasmax\' arguments are required by Thornthwaite method", call. = FALSE)
+        }
+        checkTemporalConsistency(tasmin, tasmax)
+        checkDim(tasmin, tasmax, dimensions = c("time", "lat", "lon"))
+        if (getTimeResolution(tasmin) == "MM")  {
+            if (!is.null(k)) message("Input data is monthly. Argument \'k\' will be ignored (no calibration will be applied)")
+            tas <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
+        } else if (getTimeResolution(tasmin) == "DD") {
+            tasmean <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
+            if (!is.null(k)) {
+                tas <- effectiveTempGrid(tasmin = tasmin, tasmax = tasmax, k)
+                if (isTRUE(phc)) {
+                    ph <- photoperiodGrid(tas)
+                    dn.ratio <- gridArithmetics(ph, ph, 24, ph, operator = c("-","+","-"))
+                    tas <- gridArithmetics(ph, dn.ratio, tas, operator = c("/", "*"))
+                    ind.sup <- which(tas$Data > tasmax$Data)
+                    ind.inf <- which(tas$Data < tasmean$Data)
+                    tasmean <- NULL
+                    tas$Data[ind.sup] <- tasmax$Data[ind.sup]
+                    tas$Data[ind.inf] <- tasmin$Data[ind.inf]
+                    tasmax <- tasmin <- NULL
+                }
+                suppressMessages({tas %<>%  aggregateGrid(aggr.m = list(FUN = "mean", na.rm = TRUE))})
+            } else {
+                suppressMessages({tas <- aggregateGrid(tasmean, aggr.m = list(FUN = "mean", na.rm = TRUE))})
+            }
+        } else {
+            stop("Invalid temporal resolution of input data", call. = FALSE)    
+        }
+    } else {
+        if (!is.null(tasmin) | !is.null(tasmax)) {
+            message("\'tas\' argument has been provided. Therefore, \'tasmin\' and \'tasmax\' arguments will be ignored.")
+        }
     }
     if (!identical(1:12, getSeason(tas))) stop("The input grid must encompass a whole-year season")
-    if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method")
+    # if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method", call. = FALSE)
     tas <- redim(tas, member = TRUE)
     ref.grid <- tas
     coords <- getCoordinates(tas)
