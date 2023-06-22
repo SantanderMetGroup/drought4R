@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.project
+ignore
+commonR
+init.R
+drought4R.Rproj
+.Rprofile
+*.Rbuildignore
+R/lmdown.R
+vignettes/bias_correction_figs
+.cache
+.DS_Store
