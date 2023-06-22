@@ -14,8 +14,8 @@ Suggests:
     convertR
 Type: Package
 Title: A climate4R package for PET estimation and drought assessment <http://www.meteo.unican.es/climate4R>
-Version: 0.3.0
-Date: 2019-06-17
+Version: 0.3.1
+Date: 2023-06-22
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",
@@ -26,4 +26,4 @@ Description: Potential evapotranspiration methods and drought index calculation 
 License: file LICENSE
 LazyData: true
 Encoding: UTF-8
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2

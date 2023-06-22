@@ -21,10 +21,14 @@
 * Other minor improvements
 * Removed vignette (now linked to paper supplementary information http://www.meteo.unican.es/work/climate4r/drought4R/drought4R_notebook.html)
 
-## v0.3.0 (17 Jun 2019)
+## v0.3.0 (21 Jun 2023)
 * Implementation of the calibrated Thorthwaite's method (Pereira and Pruitt 2004, DOI:10.1016/j.agwat.2003.11.003)
 * New auxiliary functions:
     * `effectiveTempGrid`, for effective temperature calculation
     * `photoperiodGrid`, for daylength estimation
 * New built-in daily datasets for the Iberian peninsula of tmax, tmin and precip (E-OBSv17 0.25 reg, year 2000)
 * Other minor changes and documentation updates
+
+## v0.3.1 (22 Jun 2023)
+ * Update of the DESCRIPTION file
+
