@@ -118,36 +118,36 @@ petGrid <- function(tasmin = NULL,
                     k = NULL,
                     photoperiod.corr = TRUE,
                     ...) {
-    method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"))
-    message("[", Sys.time(), "] Computing PET-", method, " ...")
-    out <- switch(method,
-           "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k, phc = photoperiod.corr, ...),
-           "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
-           "penman" = petGrid.pen(tasmin, tasmax, ...),
-           "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
-    message("[", Sys.time(), "] Done")
-    ## Recover the grid structure -----------------------
-    coords <- getCoordinates(out$ref.grid)
-    pet.grid <- out$ref.grid
-    pet.grid$Data <- lapply(out$et0.list, "mat2Dto3Darray", x = coords$x, y = coords$y) %>% abind(along = -1) %>% unname()
-    attr(pet.grid$Data, "dimensions") <- getDim(out$ref.grid)
-    pet.grid$Variable$varName <- paste("PET", method, sep = "_")
-    attr(pet.grid$Variable, "longname") <- paste("potential_evapotranspiration", method, sep = "_")
-    attr(pet.grid$Variable, "description") <- attr(pet.grid$Variable, "longname")
-    attr(pet.grid$Variable, "daily_agg_cellfun") <- "sum"
-    tres <- getTimeResolution(out$ref.grid)
-    attr(pet.grid$Variable, "verification_timestep") <- tres
-    if (tres == "MM") {
-        attr(pet.grid$Variable, "units") <- "mm.month-1"    
-        attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
-    } else if (tres == "DD") {
-        attr(pet.grid$Variable, "units") <- "mm.day-1"    
-    }
-    attr(pet.grid, "R_package_desc") <- paste0("drought4R-v", packageVersion("drought4R"))
-    attr(pet.grid, "R_package_URL") <- "https://github.com/SantanderMetGroup/drought4R"
-    attr(pet.grid, "R_package_ref") <- "http://dx.doi.org/10.1016/j.envsoft.2018.09.009"
-    pet.grid <- redim(pet.grid, drop = TRUE)
-    invisible(pet.grid)
+  method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"))
+  message("[", Sys.time(), "] Computing PET-", method, " ...")
+  out <- switch(method,
+                "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k, phc = photoperiod.corr, ...),
+                "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
+                "penman" = petGrid.pen(tasmin, tasmax, ...),
+                "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
+  message("[", Sys.time(), "] Done")
+  ## Recover the grid structure -----------------------
+  coords <- getCoordinates(out$ref.grid)
+  pet.grid <- out$ref.grid
+  pet.grid$Data <- lapply(out$et0.list, "mat2Dto3Darray", x = coords$x, y = coords$y) %>% abind(along = -1) %>% unname()
+  attr(pet.grid$Data, "dimensions") <- getDim(out$ref.grid)
+  pet.grid$Variable$varName <- paste("PET", method, sep = "_")
+  attr(pet.grid$Variable, "longname") <- paste("potential_evapotranspiration", method, sep = "_")
+  attr(pet.grid$Variable, "description") <- attr(pet.grid$Variable, "longname")
+  attr(pet.grid$Variable, "daily_agg_cellfun") <- "sum"
+  tres <- getTimeResolution(out$ref.grid)
+  attr(pet.grid$Variable, "verification_timestep") <- tres
+  if (tres == "MM") {
+    attr(pet.grid$Variable, "units") <- "mm.month-1"    
+    attr(pet.grid$Variable, "monthly_agg_cellfun") <- "sum"
+  } else if (tres == "DD") {
+    attr(pet.grid$Variable, "units") <- "mm.day-1"    
+  }
+  attr(pet.grid, "R_package_desc") <- paste0("drought4R-v", packageVersion("drought4R"))
+  attr(pet.grid, "R_package_URL") <- "https://github.com/SantanderMetGroup/drought4R"
+  attr(pet.grid, "R_package_ref") <- "http://dx.doi.org/10.1016/j.envsoft.2018.09.009"
+  pet.grid <- redim(pet.grid, drop = TRUE)
+  invisible(pet.grid)
 }
 
 
@@ -159,61 +159,61 @@ petGrid <- function(tasmin = NULL,
 #' @author J Bedia
 
 petGrid.th <- function(tas, tasmin, tasmax, k, phc, ...) {
-    if (is.null(tas)) {
-        if (is.null(tasmin) | is.null(tasmax)) {
-            stop("\'tas\' has been set to NULL. Therefore, both \'tasmin\' and \'tasmax\' arguments are required by Thornthwaite method", call. = FALSE)
-        }
-        checkTemporalConsistency(tasmin, tasmax)
-        checkDim(tasmin, tasmax, dimensions = c("time", "lat", "lon"))
-        if (getTimeResolution(tasmin) == "MM")  {
-            if (!is.null(k)) message("Input data is monthly. Argument \'k\' will be ignored (no calibration will be applied)")
-            tas <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
-        } else if (getTimeResolution(tasmin) == "DD") {
-            tasmean <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
-            if (!is.null(k)) {
-                tas <- effectiveTempGrid(tasmin = tasmin, tasmax = tasmax, k)
-                if (isTRUE(phc)) {
-                    ph <- photoperiodGrid(tas)
-                    dn.ratio <- gridArithmetics(ph, ph, 24, ph, operator = c("-","+","-"))
-                    tas <- gridArithmetics(ph, dn.ratio, tas, operator = c("/", "*"))
-                    ind.sup <- which(tas$Data > tasmax$Data)
-                    ind.inf <- which(tas$Data < tasmean$Data)
-                    tasmean <- NULL
-                    tas$Data[ind.sup] <- tasmax$Data[ind.sup]
-                    tas$Data[ind.inf] <- tasmin$Data[ind.inf]
-                    tasmax <- tasmin <- NULL
-                }
-                suppressMessages({tas %<>%  aggregateGrid(aggr.m = list(FUN = "mean", na.rm = TRUE))})
-            } else {
-                suppressMessages({tas <- aggregateGrid(tasmean, aggr.m = list(FUN = "mean", na.rm = TRUE))})
-            }
-        } else {
-            stop("Invalid temporal resolution of input data", call. = FALSE)    
-        }
-    } else {
-        if (!is.null(tasmin) | !is.null(tasmax)) {
-            message("\'tas\' argument has been provided. Therefore, \'tasmin\' and \'tasmax\' arguments will be ignored.")
-        }
+  if (is.null(tas)) {
+    if (is.null(tasmin) | is.null(tasmax)) {
+      stop("\'tas\' has been set to NULL. Therefore, both \'tasmin\' and \'tasmax\' arguments are required by Thornthwaite method", call. = FALSE)
     }
-    if (!identical(1:12, getSeason(tas))) stop("The input grid must encompass a whole-year season")
-    # if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method", call. = FALSE)
-    tas <- redim(tas, member = TRUE)
-    ref.grid <- tas
-    coords <- getCoordinates(tas)
-    lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
-    n.mem <- getShape(tas, "member")
-    et0.list <- lapply(1:n.mem, function(x) {
-        aux <- subsetGrid(tas, members = x, drop = TRUE)
-        Tave <- array3Dto2Dmat(aux$Data)
-        et0 <- matrix(nrow = nrow(Tave), ncol = ncol(Tave))
-        for (i in 1:ncol(et0)) {
-            et0[,i] <- tryCatch(expr = thornthwaite(Tave = Tave[,i], lat = lat[i], ...),
-                                error = function(er) return(rep(NA, nrow(et0)))
-            )
+    checkTemporalConsistency(tasmin, tasmax)
+    checkDim(tasmin, tasmax, dimensions = c("time", "lat", "lon"))
+    if (getTimeResolution(tasmin) == "MM")  {
+      if (!is.null(k)) message("Input data is monthly. Argument \'k\' will be ignored (no calibration will be applied)")
+      tas <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
+    } else if (getTimeResolution(tasmin) == "DD") {
+      tasmean <- gridArithmetics(tasmax, tasmin, 2, operator = c("+", "/"))
+      if (!is.null(k)) {
+        tas <- effectiveTempGrid(tasmin = tasmin, tasmax = tasmax, k)
+        if (isTRUE(phc)) {
+          ph <- photoperiodGrid(tas)
+          dn.ratio <- gridArithmetics(ph, ph, 24, ph, operator = c("-","+","-"))
+          tas <- gridArithmetics(ph, dn.ratio, tas, operator = c("/", "*"))
+          ind.sup <- which(tas$Data > tasmax$Data)
+          ind.inf <- which(tas$Data < tasmean$Data)
+          tasmean <- NULL
+          tas$Data[ind.sup] <- tasmax$Data[ind.sup]
+          tas$Data[ind.inf] <- tasmin$Data[ind.inf]
+          tasmax <- tasmin <- NULL
         }
-        return(et0)
-    })
-    return(list("et0.list" = et0.list, "ref.grid" = ref.grid))
+        suppressMessages({tas %<>%  aggregateGrid(aggr.m = list(FUN = "mean", na.rm = TRUE))})
+      } else {
+        suppressMessages({tas <- aggregateGrid(tasmean, aggr.m = list(FUN = "mean", na.rm = TRUE))})
+      }
+    } else {
+      stop("Invalid temporal resolution of input data", call. = FALSE)    
+    }
+  } else {
+    if (!is.null(tasmin) | !is.null(tasmax)) {
+      message("\'tas\' argument has been provided. Therefore, \'tasmin\' and \'tasmax\' arguments will be ignored.")
+    }
+  }
+  if (!identical(1:12, getSeason(tas))) stop("The input grid must encompass a whole-year season")
+  # if (getTimeResolution(tas) != "MM") stop("A monthly input grid is required by the Thornthwaite method", call. = FALSE)
+  tas <- redim(tas, member = TRUE)
+  ref.grid <- tas
+  coords <- getCoordinates(tas)
+  lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
+  n.mem <- getShape(tas, "member")
+  et0.list <- lapply(1:n.mem, function(x) {
+    aux <- subsetGrid(tas, members = x, drop = TRUE)
+    Tave <- array3Dto2Dmat(aux$Data)
+    et0 <- matrix(nrow = nrow(Tave), ncol = ncol(Tave))
+    for (i in 1:ncol(et0)) {
+      et0[,i] <- tryCatch(expr = thornthwaite(Tave = Tave[,i], lat = lat[i], ...),
+                          error = function(er) return(rep(NA, nrow(et0)))
+      )
+    }
+    return(et0)
+  })
+  return(list("et0.list" = et0.list, "ref.grid" = ref.grid))
 }
 
 #' @importFrom SPEI hargreaves
@@ -222,39 +222,40 @@ petGrid.th <- function(tas, tasmin, tasmax, k, phc, ...) {
 #' @keywords internal    
 #' @author J Bedia
 
-petGrid.har <- function(tasmin, tasmax, pr, ...) {
-    if (is.null(tasmin) || is.null(tasmax) || is.null(pr)) {
-        stop("tasmin, tasmax and pr grids are required by Hargreaves method", call. = FALSE)
-    }
-    if (getTimeResolution(tasmin) != "MM") stop("A monthly input grid is required by the Hargreaves method")
-    tasmin %<>% redim(member = TRUE)
-    tasmax %<>% redim(member = TRUE)
-    pr %<>% redim(member = TRUE)
-    suppressMessages(checkDim(tasmin, tasmax, pr))
-    checkTemporalConsistency(tasmin, tasmax, pr)
-    ref.grid <- tasmin
-    coords <- getCoordinates(tasmin)
-    lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
-    n.mem <- getShape(tasmin, "member")
-    et0.list <- lapply(1:n.mem, function(x) {
-        aux.tasmin <- subsetGrid(tasmin, members = x, drop = TRUE)
-        aux.tasmax <- subsetGrid(tasmax, members = x, drop = TRUE)
-        aux.pr <- subsetGrid(pr, members = x, drop = TRUE)
-        Tmin <- array3Dto2Dmat(aux.tasmin$Data)
-        Tmax <- array3Dto2Dmat(aux.tasmax$Data)
-        Pre <- array3Dto2Dmat(aux.pr$Data)
-        et0 <- matrix(nrow = nrow(Tmin), ncol = ncol(Tmin))
-        for (i in 1:ncol(et0)) {
-            et0[,i] <- tryCatch(expr = hargreaves(Tmin = Tmin[,i],
-                                                  Tmax = Tmax[,i],
-                                                  lat = lat[i],
-                                                  Pre = Pre[,i], ...),
-                                error = function(er) return(rep(NA, nrow(et0)))
-            )
-        }
-        return(et0)
+petGrid.har <- function(tasmin, tasmax, pr = NULL, Ra = NULL, ...) {
+  if (is.null(tasmin) || is.null(tasmax)) {
+    stop("tasmin and tasmax grids are required by Hargreaves method", call. = FALSE)
+  }
+  if (getTimeResolution(tasmin) != "MM") stop("A monthly input grid is required by the Hargreaves method")
+  variables <- list("Tmin" = tasmin, "Tmax" = tasmax, "Pre" = pr, "Ra" = Ra)  
+  ind.var <- lapply(variables, function(x) !is.null(x)) %>% unlist %>% which
+  variables <- variables[ind.var]
+  variables %<>% lapply(FUN = redim, member = TRUE)
+  do.call("checkDim", variables) %>% suppressMessages
+  do.call("checkTemporalConsistency", variables)
+  ref.grid <- variables[[1]]
+  coords <- getCoordinates(ref.grid)
+  lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
+  n.mem <- getShape(ref.grid, "member")
+  et0.list <- lapply(1:n.mem, function(x) {
+    array.list <- lapply(variables, function(v) {
+      aux <- subsetGrid(v, members = x, drop = TRUE)
+      array3Dto2Dmat(aux$Data)
     })
-    return(list("et0.list" = et0.list, "ref.grid" = ref.grid))
+    et0 <- array.list[[1]] * NA
+    add.arg.list[["na.rm"]] <- TRUE
+    arg.list <- c(array.list, add.arg.list)
+    for (i in 1:ncol(et0)) {
+      array.list.i <- lapply(array.list, function(l) l[,i])
+      add.arg.list[["lat"]] <- lat[i]
+      arg.list <- c(array.list.i, add.arg.list)
+      et0[,i] <- tryCatch(expr = do.call("hargreaves", arg.list),
+                          error = function(er) return(rep(NA, nrow(et0)))
+      )
+    }
+    return(et0)
+  })
+  return(list("et0.list" = et0.list, "ref.grid" = ref.grid))
 }
 
 
@@ -271,51 +272,51 @@ petGrid.har <- function(tasmin, tasmax, pr, ...) {
 
 
 petGrid.hs <- function(tasmin, tasmax, what) {
-    tasmin %<>% redim(member = TRUE)
-    tasmax %<>% redim(member = TRUE)
-    suppressMessages(checkDim(tasmin, tasmax))
-    checkTemporalConsistency(tasmin, tasmax)
-    if (isFALSE(getTimeResolution(tasmin) == "DD")) {
-        stop("Hargreaves-Samani method is meant for daily data", call. = FALSE)
-    }
-    if (typeofGrid(tasmin) == "rotated_grid") {
-        stop("Rotated grids are unsupported. Please consider regridding", call. = FALSE)
-    }
-    what = match.arg(what, choices = c("PET", "rad"))
-    lats <- getCoordinates(tasmin) 
-    if (is.data.frame(lats)) {
-        lats %<>% extract2("y")
+  tasmin %<>% redim(member = TRUE)
+  tasmax %<>% redim(member = TRUE)
+  suppressMessages(checkDim(tasmin, tasmax))
+  checkTemporalConsistency(tasmin, tasmax)
+  if (isFALSE(getTimeResolution(tasmin) == "DD")) {
+    stop("Hargreaves-Samani method is meant for daily data", call. = FALSE)
+  }
+  if (typeofGrid(tasmin) == "rotated_grid") {
+    stop("Rotated grids are unsupported. Please consider regridding", call. = FALSE)
+  }
+  what = match.arg(what, choices = c("PET", "rad"))
+  lats <- getCoordinates(tasmin) 
+  if (is.data.frame(lats)) {
+    lats %<>% extract2("y")
+  } else {
+    lats %<>% expand.grid() %>% extract(,2)
+  }
+  lats <- lats * (pi / 180) ## Conversion decimal degrees --> radians
+  refdates <- getRefDates(tasmin)
+  J <- refdates %>% as.Date() %>% format("%j") %>% as.integer()
+  ind <- getYearsAsINDEX(tasmin) %>% which.leap()
+  year.len <- rep(365, length(refdates))
+  year.len[ind] <- 366 ## Number of days per year (controlling for leap years)
+  ds <- 0.409 * sin(2 * pi * J / year.len - 1.39) ## Solar declination, FAO, eq. 24 (p. 46)
+  n.mem <- getShape(tasmin, "member")
+  aux.lat <- matrix(lats, nrow = length(J), ncol = length(lats), byrow = TRUE) 
+  ws <- acos(-tan(aux.lat) * tan(ds))   ## Sunset hour angle, FAO, eq. 25 (p. 46)
+  dr <- 1 + 0.033 * cos(2 * pi * J / year.len) ## inverse relative distance Earth-Sun , FAO, eq. 23 (p. 46)
+  Gsc <- 0.082 ## Solar constant (MJ.m-2.min-1)
+  Ra <- (24 * 60 * Gsc * dr * (ws * sin(aux.lat) * sin(ds) + cos(aux.lat) * cos(ds) * sin(ws))) / pi ## FAO, eq. 21 (p. 46)
+  et0.list <- lapply(1:n.mem, function(x) {
+    if (what == "rad") {
+      return(Ra)
     } else {
-        lats %<>% expand.grid() %>% extract(,2)
+      tn <- subsetGrid(tasmin, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+      tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
+      trng <- tx - tn
+      # Ensure that no negative temperature daily ranges exist
+      if (any(trng < 0)) {
+        trng[which(trng < 0)] <- 0
+      }
+      .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(trng) %>% return() ## FAO, eq. 52 (p. 64), applying conversion of units to Ra (MJ.m-2.day-1 --> mm.day-1)
     }
-    lats <- lats * (pi / 180) ## Conversion decimal degrees --> radians
-    refdates <- getRefDates(tasmin)
-    J <- refdates %>% as.Date() %>% format("%j") %>% as.integer()
-    ind <- getYearsAsINDEX(tasmin) %>% which.leap()
-    year.len <- rep(365, length(refdates))
-    year.len[ind] <- 366 ## Number of days per year (controlling for leap years)
-    ds <- 0.409 * sin(2 * pi * J / year.len - 1.39) ## Solar declination, FAO, eq. 24 (p. 46)
-    n.mem <- getShape(tasmin, "member")
-    aux.lat <- matrix(lats, nrow = length(J), ncol = length(lats), byrow = TRUE) 
-    ws <- acos(-tan(aux.lat) * tan(ds))   ## Sunset hour angle, FAO, eq. 25 (p. 46)
-    dr <- 1 + 0.033 * cos(2 * pi * J / year.len) ## inverse relative distance Earth-Sun , FAO, eq. 23 (p. 46)
-    Gsc <- 0.082 ## Solar constant (MJ.m-2.min-1)
-    Ra <- (24 * 60 * Gsc * dr * (ws * sin(aux.lat) * sin(ds) + cos(aux.lat) * cos(ds) * sin(ws))) / pi ## FAO, eq. 21 (p. 46)
-    et0.list <- lapply(1:n.mem, function(x) {
-        if (what == "rad") {
-            return(Ra)
-        } else {
-            tn <- subsetGrid(tasmin, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
-            tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
-            trng <- tx - tn
-            # Ensure that no negative temperature daily ranges exist
-            if (any(trng < 0)) {
-                trng[which(trng < 0)] <- 0
-            }
-            .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(trng) %>% return() ## FAO, eq. 52 (p. 64), applying conversion of units to Ra (MJ.m-2.day-1 --> mm.day-1)
-        }
-    })
-    return(list("et0.list" = et0.list, "ref.grid" = tasmin))
+  })
+  return(list("et0.list" = et0.list, "ref.grid" = tasmin))
 }
 
 
@@ -460,7 +461,7 @@ petGrid.pen <- function(tasmin, tasmax,
 #' @importFrom utils tail
 
 ndays <- function(d) {
-    as.difftime(tail((28:31)[which(!is.na(as.Date(paste0(substr(d, 1, 8), 28:31), '%Y-%m-%d')))], 1), units = "days")
+  as.difftime(tail((28:31)[which(!is.na(as.Date(paste0(substr(d, 1, 8), 28:31), '%Y-%m-%d')))], 1), units = "days")
 }
 
 
