@@ -327,7 +327,7 @@ petGrid.hs <- function(tasmin, tasmax, what) {
 #' @author M Iturbide
 
 petGrid.pen <- function(tasmin, tasmax, 
-                        wss = NULL,  
+                        U2 = NULL,  
                         Ra = NULL,
                         Rs = NULL,
                         tsun = NULL,
@@ -345,7 +345,7 @@ petGrid.pen <- function(tasmin, tasmax,
     stop("tasmin and tasmax grids are required by Penman method", call. = FALSE)
   }
   if (getTimeResolution(tasmin) != "MM") stop("A monthly input grid is required by the Hargreaves method")
-  variables <- list("Tmin" = tasmin, "Tmax" = tasmax, "U2" = wss, "Ra" = Ra, 
+  variables <- list("Tmin" = tasmin, "Tmax" = tasmax, "U2" = U2, "Ra" = Ra, 
                     "Rs" = Rs, "tsun" = tsun, "CC" = CC, "ed" = ed, "Tdew" = Tdew, 
                     "RH" = RH, "P" = P, "P0" = P0, "CO2" = CO2, "z" = z)
   ind.var <- lapply(variables, function(x) !is.null(x)) %>% unlist %>% which
