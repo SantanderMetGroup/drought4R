@@ -21,7 +21,6 @@
 #' @param tasmax Grid of maximum monthly temperature (degC)
 #' @param tasmin Grid of minimum monthly temperature (degC)
 #' @param pr Grid of total monthly precipitation amount (mm/month)
-#' @param wss Grid of monthly mean daily wind speeds at 2 m height (m s-1)
 #' @param method Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
 #' \code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
 #' In addition, \code{"hargreaves-samani"} is available for daily data. See details.
@@ -31,7 +30,11 @@
 #' @param what Optional character string, only applied for the Hargreaves-Samani method.
 #' If set to \code{what = "rad"}, it returns the estimated radiation (it is a function of latitude and date).
 #' Otherwise, by default, returns the estimated daily potential evapotranspiration.
-#' @param ... Further arguments passed to the PET internals
+#' @param ... Further arguments passed to the PET internals. They can be additional variables or other sort of
+#' parametters: check the help page of the \code{hargreaves} function in the \pkg{SPEI} package 
+#' (\code{> ?SPEI::hargreaves}) for a description of the additional parameters than can be set. 
+#' When the parameter is an additional variable (such as U2, Ra, etc.), here, in function \code{petGrid}, these are provided as 
+#' climate4R grids (same as for arguments \code{tas}, \code{tasmin}, \code{tasmax}  \code{pr}).
 #' @details
 #' This function is a wrapper of the functions with the same name as given in \code{method}
 #' from the \pkg{SPEI} package (Begueria and Vicente-Serrano). Monthly input data are thus required. 
@@ -110,7 +113,6 @@ petGrid <- function(tasmin = NULL,
                     tasmax = NULL,
                     tas = NULL,
                     pr = NULL,
-                    wss = NULL,
                     method = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"),
                     what = c("PET", "rad"),
                     k = NULL,
@@ -322,7 +324,7 @@ petGrid.hs <- function(tasmin, tasmax, what) {
 #' @importFrom magrittr %<>% 
 #' @importFrom abind abind
 #' @keywords internal    
-#' @author J Bedia
+#' @author M Iturbide
 
 petGrid.pen <- function(tasmin, tasmax, 
                         wss = NULL,  
@@ -351,10 +353,10 @@ petGrid.pen <- function(tasmin, tasmax,
   variables %<>% lapply(FUN = redim, member = TRUE)
   do.call("checkDim", variables) %>% suppressMessages
   do.call("checkTemporalConsistency", variables)
-  ref.grid <- tasmin
-  coords <- getCoordinates(tasmin)
+  ref.grid <- variables[[1]]
+  coords <- getCoordinates(ref.grid)
   lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
-  n.mem <- getShape(tasmin, "member")
+  n.mem <- getShape(ref.grid, "member")
   et0.list <- lapply(1:n.mem, function(x) {
     array.list <- lapply(variables, function(v) {
       aux <- subsetGrid(v, members = x, drop = TRUE)

@@ -4,9 +4,17 @@
 \alias{petGrid}
 \title{Calculation of Potential Evapotranspiration}
 \usage{
-petGrid(tasmin = NULL, tasmax = NULL, tas = NULL, pr = NULL,
-  method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
-  what = c("PET", "rad"), k = NULL, photoperiod.corr = TRUE, ...)
+petGrid(
+  tasmin = NULL,
+  tasmax = NULL,
+  tas = NULL,
+  pr = NULL,
+  method = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"),
+  what = c("PET", "rad"),
+  k = NULL,
+  photoperiod.corr = TRUE,
+  ...
+)
 }
 \arguments{
 \item{tasmin}{Grid of minimum monthly temperature (degC)}
@@ -30,7 +38,11 @@ Otherwise, by default, returns the estimated daily potential evapotranspiration.
 \item{photoperiod.corr}{Correction with the day-night ratio applied to effective temperature (default to \code{TRUE}).
 Only applies to the calibrated Thorthwaite method.}
 
-\item{...}{Further arguments passed to the PET internals}
+\item{...}{Further arguments passed to the PET internals. They can be additional variables or other sort of
+parametters: check the help page of the \code{hargreaves} function in the \pkg{SPEI} package 
+(\code{> ?SPEI::hargreaves}) for a description of the additional parameters than can be set. 
+When the parameter is an additional variable (such as U2, Ra, etc.), here, in function \code{petGrid}, these are provided as 
+climate4R grids (same as for arguments \code{tas}, \code{tasmin}, \code{tasmax}  \code{pr}).}
 }
 \description{
 Implementation of several PET methods for the climate4R bundle

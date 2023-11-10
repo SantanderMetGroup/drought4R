@@ -4,7 +4,9 @@
 \name{tasmin.cru.iberia}
 \alias{tasmin.cru.iberia}
 \title{Mean minimum monthly temperature data in the Iberian Peninsula 1981-2010}
-\format{A \pkg{climate4R} grid}
+\format{
+A \pkg{climate4R} grid
+}
 \source{
 Climate Research Unit, University of East Anglia (CRU TS v4.00), \url{https://crudata.uea.ac.uk/cru/data/hrg/}.
 The R dataset has been created with package \pkg{loadeR}, of the \strong{climate4R bundle} (Cofino et al 2017)

@@ -4,7 +4,9 @@
 \name{tasmin.eobs.iberia.daily}
 \alias{tasmin.eobs.iberia.daily}
 \title{Daily minimum temperature data in the Iberian Peninsula for the year 2000}
-\format{A \pkg{climate4R} grid}
+\format{
+A \pkg{climate4R} grid
+}
 \source{
 E-OBS dataset v17 (Haylock \emph{et al.} 2008)
 The R dataset has been created with the climate4R package \pkg{loadeR} (Iturbide \emph{et al.} 2019), reading directly from
