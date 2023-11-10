@@ -21,6 +21,7 @@
 #' @param tasmax Grid of maximum monthly temperature (degC)
 #' @param tasmin Grid of minimum monthly temperature (degC)
 #' @param pr Grid of total monthly precipitation amount (mm/month)
+#' @param wss Grid of monthly mean daily wind speeds at 2 m height (m s-1)
 #' @param method Potential evapotranspiration method. Currently \code{"thornthwaite"} and 
 #' \code{"hargreaves"} methods are available (monthly), using the implementation of package \pkg{SPEI}.
 #' In addition, \code{"hargreaves-samani"} is available for daily data. See details.
@@ -109,16 +110,18 @@ petGrid <- function(tasmin = NULL,
                     tasmax = NULL,
                     tas = NULL,
                     pr = NULL,
-                    method = c("thornthwaite", "hargreaves", "hargreaves-samani"),
+                    wss = NULL,
+                    method = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"),
                     what = c("PET", "rad"),
                     k = NULL,
                     photoperiod.corr = TRUE,
                     ...) {
-    method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "hargreaves-samani"))
+    method <- match.arg(method, choices = c("thornthwaite", "hargreaves", "penman", "hargreaves-samani"))
     message("[", Sys.time(), "] Computing PET-", method, " ...")
     out <- switch(method,
            "thornthwaite" = petGrid.th(tas, tasmin, tasmax, k, phc = photoperiod.corr, ...),
            "hargreaves" = petGrid.har(tasmin, tasmax, pr, ...),
+           "penman" = petGrid.pen(tasmin, tasmax, ...),
            "hargreaves-samani" = petGrid.hs(tasmin, tasmax, what))
     message("[", Sys.time(), "] Done")
     ## Recover the grid structure -----------------------
@@ -311,6 +314,66 @@ petGrid.hs <- function(tasmin, tasmax, what) {
         }
     })
     return(list("et0.list" = et0.list, "ref.grid" = tasmin))
+}
+
+
+#' @importFrom SPEI penman
+#' @importFrom transformeR getCoordinates getSeason array3Dto2Dmat getTimeResolution checkTemporalConsistency
+#' @importFrom magrittr %<>% 
+#' @importFrom abind abind
+#' @keywords internal    
+#' @author J Bedia
+
+petGrid.pen <- function(tasmin, tasmax, 
+                        wss = NULL,  
+                        Ra = NULL,
+                        Rs = NULL,
+                        tsun = NULL,
+                        CC = NULL,
+                        ed = NULL,
+                        Tdew = NULL,
+                        RH = NULL,
+                        P = NULL,
+                        P0 = NULL,
+                        CO2 = NULL,
+                        z = NULL,
+                        ...) {
+  add.arg.list <- list(...)
+  if (is.null(tasmin) || is.null(tasmax) ) {
+    stop("tasmin and tasmax grids are required by Penman method", call. = FALSE)
+  }
+  if (getTimeResolution(tasmin) != "MM") stop("A monthly input grid is required by the Hargreaves method")
+  variables <- list("Tmin" = tasmin, "Tmax" = tasmax, "U2" = wss, "Ra" = Ra, 
+                    "Rs" = Rs, "tsun" = tsun, "CC" = CC, "ed" = ed, "Tdew" = Tdew, 
+                    "RH" = RH, "P" = P, "P0" = P0, "CO2" = CO2, "z" = z)
+  ind.var <- lapply(variables, function(x) !is.null(x)) %>% unlist %>% which
+  variables <- variables[ind.var]
+  variables %<>% lapply(FUN = redim, member = TRUE)
+  do.call("checkDim", variables) %>% suppressMessages
+  do.call("checkTemporalConsistency", variables)
+  ref.grid <- tasmin
+  coords <- getCoordinates(tasmin)
+  lat <- expand.grid(coords$y, coords$x)[2:1][ ,2]
+  n.mem <- getShape(tasmin, "member")
+  et0.list <- lapply(1:n.mem, function(x) {
+    array.list <- lapply(variables, function(v) {
+      aux <- subsetGrid(v, members = x, drop = TRUE)
+      array3Dto2Dmat(aux$Data)
+    })
+    et0 <- array.list[[1]] * NA
+    add.arg.list[["na.rm"]] <- TRUE
+    arg.list <- c(array.list, add.arg.list)
+    for (i in 1:ncol(et0)) {
+      array.list.i <- lapply(array.list, function(l) l[,i])
+      add.arg.list[["lat"]] <- lat[i]
+      arg.list <- c(array.list.i, add.arg.list)
+      et0[,i] <- tryCatch(expr = do.call("penman", arg.list),
+                          error = function(er) return(rep(NA, nrow(et0)))
+      )
+    }
+    return(et0)
+  })
+  return(list("et0.list" = et0.list, "ref.grid" = ref.grid))
 }
 
 
