@@ -152,7 +152,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
   pr.grid <- redim(pr.grid, drop = TRUE)
   pr.grid$Variable$varName <- if (return.coefficients) paste(method, "params") else method
   longname <- ifelse(grepl("SPI", method), "Standardized Precipitation Index", "Standardized Precipitation-Evapotranspiration Index")
-  description <- ifelse(return.coefficients, paste("Distribution parametters for period ", c(ref.start, "-", ref.end) %>% paste(collapse = "")), paste("Index using ref period", c(ref.start, "-", ref.end) %>% paste(collapse = "")))
+  description <- ifelse(return.coefficients, "Distribution parametters", "Index")
   attr(pr.grid$Variable, "longname") <- if (return.coefficients) paste("params for", longname, scale) else paste(longname, scale)
   attr(pr.grid$Variable, "description") <- description
   attr(pr.grid$Variable, "units") <- "dimensionless"
