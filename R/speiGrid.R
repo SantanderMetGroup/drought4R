@@ -23,7 +23,7 @@
 #' @param params A multi-member grid with the distribution parameter values for computing the spei. 
 #' Each member corresponds to a parameter. The time dimension length must be 12 (months of the year). 
 #' This grid is generated when the parameter \code{return.coefficients} is set as \code{TRUE}. 
-#' @param return.coefficients Logical (Default to FALSE). If TRUE, the function returns the parameter values
+#' @param return.coefficients Logical (Default to FALSE). If TRUE, the function returns the parameter coefficients
 #' of the distribution that can be further used for computing the index, thus avoiding parameter fitting
 #' in subsequent applications of the function. 
 #' @param ... Further arguments passed to \code{\link[SPEI]{spei}}
@@ -45,6 +45,9 @@
 #' data("tas.cru.iberia")
 #' et0.grid <- petGrid(tas = tas.cru.iberia, method = "thornthwaite")
 #' spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, na.rm = TRUE)
+#' ## Extract the parameter coefficients of the distribution fist and compute the index afterwards:
+#' spei3.params <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, return.coefficients = TRUE, na.rm = TRUE)
+#' spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, params = spei3.params, na.rm = TRUE)
 
 speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.coefficients = FALSE, ...) {
   arg.list <- list(...)
@@ -107,7 +110,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
     
     wbalance <- pr - pet
     pt <- pet <- NULL
-    #
+    # TYPICAL CASE WHERE THE PARAMETTER FITTING IS PERFORMED AND INDEX IS RETURNED
     if(isFALSE(return.coefficients) & is.null(params)) {
       index <- apply(wbalance, MARGIN = 2, FUN = function(i) {
         arg.list[["data"]] <- ts(data = i, 
@@ -119,6 +122,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
       if (length(naind) > 0) index <- index[-naind, ]
       x <- mat2Dto3Darray(index, x = coords$x, y = coords$y)   
       
+      # CASE WHERE THE PARAMETTER FITTING IS PERFORMED AND PARAMETER VALUES ARE RETURNED  
     } else if (isTRUE(return.coefficients)) {
       index <- lapply(1:ncol(wbalance), FUN = function(i) {
         arg.list[["data"]] <- ts(data = wbalance[,i], 
@@ -132,7 +136,8 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
         if (length(naind) > 0) mat.index <- mat.index[-naind, ]
         mat2Dto3Darray(mat.index, x = coords$x, y = coords$y)
       }) %>% c(along = 0) %>% do.call(what = "abind")
-    
+      
+      # CASE WHERE THE PARAMETTER FITTING IS SKIPPED AND THE INDEX RETURNED  
     } else if (!is.null(params)) {
       index <- lapply(1:ncol(wbalance), FUN = function(i) {
         arg.list[["data"]] <- ts(data = wbalance[,i], 
