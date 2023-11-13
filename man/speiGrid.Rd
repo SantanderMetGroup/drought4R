@@ -20,13 +20,13 @@ speiGrid(
 
 \item{scale}{Integer. Time scale at which the SPEI/SPI are computed. Default to 3 (months)}
 
-\item{params}{A multi-member grid with the distribution parameter values for computing the spei. 
+\item{params}{A multi-member grid with the distribution parameter coefficients for computing the spei. 
 Each member corresponds to a parameter. The time dimension length must be 12 (months of the year). 
-This grid is generated when the parameter \code{return.coefficients} is set as \code{TRUE}.}
+This grid is generated when the argument \code{return.coefficients} is set as \code{TRUE} (See examples).}
 
-\item{return.coefficients}{Logical (Default to FALSE). If TRUE, the function returns the parameter values
+\item{return.coefficients}{Logical (Default to FALSE). If TRUE, the function returns the parameter coefficients
 of the distribution that can be further used for computing the index, thus avoiding parameter fitting
-in subsequent applications of the function.}
+in subsequent applications of the function (See examples).}
 
 \item{...}{Further arguments passed to \code{\link[SPEI]{spei}}}
 }
@@ -48,6 +48,9 @@ spi3 <- speiGrid(pr.grid = pr.cru.iberia, scale = 3, na.rm = TRUE)
 data("tas.cru.iberia")
 et0.grid <- petGrid(tas = tas.cru.iberia, method = "thornthwaite")
 spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, na.rm = TRUE)
+## Extract the parameter coefficients of the distribution fist and compute the index afterwards:
+spei3.params <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, return.coefficients = TRUE, na.rm = TRUE)
+spei3 <- speiGrid(pr.cru.iberia, et0.grid = et0.grid, scale = 3, params = spei3.params, na.rm = TRUE)
 }
 \seealso{
 \code{\link{petGrid}}, for PET calculation
