@@ -4,7 +4,14 @@
 \alias{speiGrid}
 \title{Computation of Standardized Precipitation(-Evapotranspiration) Index Grids}
 \usage{
-speiGrid(pr.grid, et0.grid = NULL, scale = 3, ...)
+speiGrid(
+  pr.grid,
+  et0.grid = NULL,
+  scale = 3,
+  params = NULL,
+  return.coefficients = FALSE,
+  ...
+)
 }
 \arguments{
 \item{pr.grid}{Precipitation grid (monthly accumulated values, in mm)}
@@ -12,6 +19,14 @@ speiGrid(pr.grid, et0.grid = NULL, scale = 3, ...)
 \item{et0.grid}{Potential evapotranspiration grid (same units as \code{pr.grid})}
 
 \item{scale}{Integer. Time scale at which the SPEI/SPI are computed. Default to 3 (months)}
+
+\item{params}{A multi-member grid with the distribution parameter values for computing the spei. 
+Each member corresponds to a parameter. The time dimension length must be 12 (months of the year). 
+This grid is generated when the parameter \code{return.coefficients} is set as \code{TRUE}.}
+
+\item{return.coefficients}{Logical (Default to FALSE). If TRUE, the function returns the parameter values
+of the distribution that can be further used for computing the index, thus avoiding parameter fitting
+in subsequent applications of the function.}
 
 \item{...}{Further arguments passed to \code{\link[SPEI]{spei}}}
 }
