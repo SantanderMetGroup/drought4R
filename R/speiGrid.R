@@ -20,12 +20,12 @@
 #' @param pr.grid Precipitation grid (monthly accumulated values, in mm)
 #' @param et0.grid Potential evapotranspiration grid (same units as \code{pr.grid})
 #' @param scale Integer. Time scale at which the SPEI/SPI are computed. Default to 3 (months)
-#' @param params A multi-member grid with the distribution parameter values for computing the spei. 
+#' @param params A multi-member grid with the distribution parameter coefficients for computing the spei. 
 #' Each member corresponds to a parameter. The time dimension length must be 12 (months of the year). 
-#' This grid is generated when the parameter \code{return.coefficients} is set as \code{TRUE}. 
+#' This grid is generated when the argument \code{return.coefficients} is set as \code{TRUE} (See examples). 
 #' @param return.coefficients Logical (Default to FALSE). If TRUE, the function returns the parameter coefficients
 #' of the distribution that can be further used for computing the index, thus avoiding parameter fitting
-#' in subsequent applications of the function. 
+#' in subsequent applications of the function (See examples). 
 #' @param ... Further arguments passed to \code{\link[SPEI]{spei}}
 #' @details The function is a wrapper of function \code{\link[SPEI]{spei}} from package \pkg{SPEI} adapted
 #' to \strong{climate4R} input grids
@@ -144,7 +144,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
                                  frequency = 12) 
         arg.list[["params"]] <- params.mat[,,i] %>% abind(along = 1.5)
         do.call("spei", arg.list) %>% extract2("fitted")
-      }) 
+      }) %>% c(along = 2L) %>% do.call(what = "abind")
       if (length(naind) > 0) index <- index[-naind, ]
       x <- mat2Dto3Darray(index, x = coords$x, y = coords$y) 
     } 
