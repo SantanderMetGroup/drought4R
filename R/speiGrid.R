@@ -151,6 +151,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
   })
   message("[", Sys.time(), "] Done")
   ## Recover the grid structure -----------------------
+  if(return.coefficients) pr.grid <- climatology(pr.grid) %>% suppressMessages
   pr.grid$Data <- do.call("abind", c(spei.list, along = -1L)) %>% unname()
   if (isTRUE(return.coefficients))   pr.grid <- redim(pr.grid, drop = TRUE)
   attr(pr.grid$Data, "dimensions") <- dimNames

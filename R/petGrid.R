@@ -223,6 +223,7 @@ petGrid.th <- function(tas, tasmin, tasmax, k, phc, ...) {
 #' @author J Bedia
 
 petGrid.har <- function(tasmin, tasmax, pr = NULL, Ra = NULL, ...) {
+  add.arg.list <- list(...)
   if (is.null(tasmin) || is.null(tasmax)) {
     stop("tasmin and tasmax grids are required by Hargreaves method", call. = FALSE)
   }
