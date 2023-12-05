@@ -84,7 +84,7 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
   if (!is.null(params)) {
     params.mat <- lapply(1:getShape(params, "member"), function(p) 
       subsetGrid(params, members = p, drop = TRUE) %>% 
-        extract2("Data") %>% array3Dto2Dmat()) %>% c(along = 0L) %>% do.call(what = "abind")
+        redim(member = F) %>% extract2("Data") %>% array3Dto2Dmat) %>% c(along = 0L) %>% do.call(what = "abind")
   }
   
   spei.list <- lapply(1:n.mem, function(x) {
@@ -151,7 +151,8 @@ speiGrid <- function(pr.grid, et0.grid = NULL, scale = 3, params = NULL, return.
   })
   message("[", Sys.time(), "] Done")
   ## Recover the grid structure -----------------------
-  if(return.coefficients) pr.grid <- climatology(pr.grid) %>% suppressMessages
+  if(return.coefficients) pr.grid <- lapply(1:12, function(month) subsetGrid(pr.grid, season = month) %>% climatology %>% suppressMessages) %>%
+    c(dimension = "time") %>% do.call(what = "bindGrid")
   pr.grid$Data <- do.call("abind", c(spei.list, along = -1L)) %>% unname()
   if (isTRUE(return.coefficients))   pr.grid <- redim(pr.grid, drop = TRUE)
   attr(pr.grid$Data, "dimensions") <- dimNames
