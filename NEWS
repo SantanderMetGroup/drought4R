@@ -32,3 +32,6 @@
 ## v0.3.1 (22 Jun 2023)
  * Update of the DESCRIPTION file
 
+## v0.3.2 (6 Feb 2024)
+ * Updates according to the latest SPEI version (v1.8.1)
+ * Implementation allowing the use of precalculated parameters in speiGrid

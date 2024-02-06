@@ -2,7 +2,7 @@ Package: drought4R
 Depends:
     R(>= 3.5.0)
 Imports:
-    SPEI,
+    SPEI(>= 1.8.1),
     transformeR(>= 1.4.4),
     utils,
     abind,
@@ -14,8 +14,8 @@ Suggests:
     convertR
 Type: Package
 Title: A climate4R package for PET estimation and drought assessment <http://www.meteo.unican.es/climate4R>
-Version: 0.3.1
-Date: 2023-06-22
+Version: 0.3.2
+Date: 2024-02-06
 Authors@R: as.person(c(
     "Santander Meteorology Group <http://meteo.unican.es> [cph]",
     "Joaquín Bedia <bediaj@unican.es> [aut, cre]",
