@@ -311,7 +311,7 @@ petGrid.hs <- function(tasmin, tasmax, what) {
       tx <- subsetGrid(tasmax, members = x, drop = TRUE) %>% extract2("Data") %>% array3Dto2Dmat()
       trng <- tx - tn
       # Ensure that no negative temperature daily ranges exist
-      if (any(trng < 0)) {
+      if (any(trng < 0, na.rm = TRUE)) {
         trng[which(trng < 0)] <- 0
       }
       .0023 * (Ra / 2.45) * ((tx + tn) / 2 + 17.8) * sqrt(trng) %>% return() ## FAO, eq. 52 (p. 64), applying conversion of units to Ra (MJ.m-2.day-1 --> mm.day-1)
